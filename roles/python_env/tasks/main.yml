@@ -1,0 +1,35 @@
+---
+- name: 更新apt套件
+  apt:
+    update_cache: yes
+
+- name: Install python3-venv
+  apt: 
+    name: python3-venv
+    state: present
+  become: true
+
+- name: 建立虛擬環境資料夾
+  file: 
+    path: "{{venv_path}}"
+    state: directory
+    mode: '0755'
+
+- name: 建立虛擬環境
+  command: python3 -m venv {{venv_path}} 
+  args:
+    creates: "{{venv_path}}/bin/activate"
+
+- name: 複製requirements.txt到遠端
+  copy: 
+    src: requirements.txt
+    dest: "{{venv_path}}/requirements.txt"
+
+- name: 安裝pip套件
+  pip: 
+    requirements: "{{venv_path}}/requirements.txt" 
+    virtualenv: "{{venv_path}}"
+    virtualenv_python: python3
+- name: 檢查虛擬環境是否安裝指定套件
+  import_tasks: check.yml
+

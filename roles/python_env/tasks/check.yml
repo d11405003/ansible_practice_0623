@@ -1,0 +1,14 @@
+- name: 檢查虛擬環境內是否安裝指定套件
+  shell: |
+    if {{ venv_path }}/bin/pip show {{ item }} > /dev/null 2>&1; then
+      echo {{ item }} >> /tmp/pip_checked.log
+    fi
+  args:
+    executable: /bin/bash
+  loop:
+    - requests
+    - tqdm
+    - ansible
+    - joblib
+  tags: verify
+

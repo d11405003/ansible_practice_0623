@@ -1,0 +1,63 @@
+---
+- name: Build directory and Copy values.yaml
+  import_tasks: build_copy.yaml
+
+- name: 誰在執行這個 playbook？
+  command: whoami
+  register: user_check
+
+- debug:
+    var: user_check.stdout
+
+- name: 清除 elastic-system namespace（避免殘留）
+  shell: |
+    helm uninstall elasticsearch --namespace elastic-system || true
+    helm uninstall kibana --namespace elastic-system || true
+    helm uninstall logstash --namespace elastic-system || true
+    helm uninstall filebeat --namespace elastic-system || true
+    kubectl delete namespace elastic-system --ignore-not-found
+    kubectl delete clusterrole filebeat-filebeat-cluster-role --ignore-not-found
+    kubectl delete clusterrolebinding filebeat-filebeat-cluster-rolebinding --ignore-not-found
+
+
+
+- name: 安裝Elasticsearch
+  shell: >
+    helm install elasticsearch elastic/elasticsearch
+    -f /home/ubuntu/elastic/elasticsearch/values.yml
+    --namespace elastic-system
+    --create-namespace
+  args:
+    chdir: /tmp
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: 安裝 Filebeat
+  command: >
+    helm install filebeat elastic/filebeat
+    -f /home/ubuntu/elastic/filebeat/values.yml
+    --namespace elastic-system
+  args:
+    chdir: /tmp
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: 安裝 Logstash
+  command: >
+    helm install logstash elastic/logstash
+    -f /home/ubuntu/elastic/logstash/values.yml
+    --namespace elastic-system
+  args:
+    chdir: /tmp
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: 安裝 Kibana
+  command: >
+    helm install kibana elastic/kibana
+    -f /home/ubuntu/elastic/kibana/values.yml
+    --namespace elastic-system
+  args:
+    chdir: /tmp
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml

@@ -1,0 +1,5 @@
+---
+k3s_version: v1.29.1+k3s1
+k3s_install_script: https://get.k3s.io
+k3s_token: ""
+

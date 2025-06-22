@@ -1,0 +1,15 @@
+- name: 安裝python虛擬環境
+  hosts: all
+  gather_facts: no
+  tasks:
+    - import_role:
+        name: python_env
+      become: true
+
+    - import_role:
+        name: install_k3s
+      become: false
+
+    - import_role: 
+        name: elastic
+      become: false  

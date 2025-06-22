@@ -1,0 +1,52 @@
+- name: 建立 elastic 資料夾結構
+  file:
+    path: "/home/ubuntu/elastic/{{item}}"
+    state: directory
+    mode: '0755'
+    owner: ubuntu
+    group: ubuntu
+  loop:
+    - elasticsearch
+    - kibana
+    - logstash
+    - filebeat
+
+- name: 複製各個 ELK values.yml
+  copy:
+    src: "/home/ubuntu/elk/{{ item }}/values.yml"
+    dest: "/home/ubuntu/elastic/{{ item }}/values.yml"
+  loop:
+    - elasticsearch
+    - filebeat
+    - logstash
+    - kibana
+
+- name: 安裝helm
+  shell: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  args:
+    creates: /usr/local/bin/helm
+  become: true
+
+- name: 加入Elastic官方Helm倉庫
+  shell: helm repo add elastic https://helm.elastic.co
+  environment:
+    KUBECONFIG: /home/ubuntu/.k3s/k3s.yaml
+  args:
+    creates: /home/ubuntu/.cache/helm/repository/elastic-index.yaml
+  become: false
+
+- name: update Helm 倉庫
+  shell: helm repo update
+  environment:
+    KUBECONFIG: /home/ubuntu/.k3s/k3s.yaml
+  become: false
+
+- name: 確認 values.yml 是否已存在
+  stat:
+    path: /home/ubuntu/elastic/elasticsearch/values.yml
+  register: elastic_values
+
+- name: 顯示 elasticsearch values 檔案狀態
+  debug:
+    var: elastic_values.stat.exists
+

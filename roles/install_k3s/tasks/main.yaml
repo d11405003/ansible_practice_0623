@@ -1,0 +1,36 @@
+---
+- name: 檢查是否安裝k3s
+  stat:
+    path: /usr/local/bin/k3s
+  register: k3s_binary
+
+- name: 安裝k3s
+  shell: 
+    curl -sfL {{k3s_install_script}} | INSTALL_K3S_EXEC="--write-kubeconfig-mode 644"  sh -
+  args: 
+    creates: /usr/local/bin/k3s 
+    executable: /bin/bash
+  when: not k3s_binary.stat.exists
+
+- name: 建立.k3s資料夾
+  become: false
+  file:
+    path: "/home/ubuntu/.k3s"
+    state: directory
+    mode: '0755'  
+
+- name: 複製k3s.yaml到使用者目錄
+  copy: 
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: /home/ubuntu/.k3s/k3s.yaml
+    remote_src: yes
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: 寫入.bashrc設定
+  lineinfile: 
+    path: "/home/ubuntu/.bashrc"
+    line: 'export KUBECONFIG=$HOME/.k3s/k3s.yaml'
+    state: present
+  become: no  
